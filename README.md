@@ -31,10 +31,9 @@ text_translation_pipeline/
      ```dotenv
      CLIENT_SERVICE_TOKEN=mysecret-token
      ```
-#### Running the Application
+## Running the Application
 1.	In the project root, open a terminal and run:
 ```bash
-   docker-compose down
    docker-compose build --no-cache
    docker-compose up
 ```
@@ -43,7 +42,7 @@ text_translation_pipeline/
 - **Business Service:** Accessible internally via http://localhost:5006 (for internal use only)
 - **Database Service:** Accessible internally via http://localhost:5007 (for internal use only)
 
-##### Token-Based Authentication
+#### Token-Based Authentication
 
 **Mechanism:**  
 The Client Service requires an `Authorization` header with the value:
@@ -72,7 +71,30 @@ When a request is made to the Client Service, the FastAPI endpoint retrieves the
 5. **Database Service → Client Service → Client:**  
    After storing the data, the Database Service returns a success message to the Client Service, which then returns the final translation result to the client.
 
-## Testing Endpoints
+
+## Translation Request using curl
+
+Submit a POST request to the Client Service's `/translate` endpoint:
+
+```bash
+curl -X POST http://localhost:5005/translate \
+  -H "Authorization: Bearer mysecret-token" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Я б хотів купити лосось", "target_language": "en"}'
+```
+In this curl example, the JSON payload contains two key-value pairs:
+- “text”:
+This is the original piece of text that you want to translate. In the example, "Я б хотів купити лосось" is the input text that will be processed by the Business Service.
+- “target_language”:
+This specifies the language into which the text should be translated. In the example, "en" is provided as the target language, which stands for English.
+
+Thus, when you send this request, the system will take the text “Я б хотів купити лосось” and translate it into English.
+
+**Expected Response:**
+```json
+{"detected_language_of_request":"uk","target_language":"en","translated_text":"I would like to buy salmon"}
+```
+## Testing Other Endpoints
 
 ### Business Service Endpoints
 
@@ -136,19 +158,6 @@ When a request is made to the Client Service, the FastAPI endpoint retrieves the
     curl -X GET http://localhost:5005/some-protected-route \
       -H "Authorization: Bearer mysecret-token"
     ```
-
-- **Translate Endpoint**  
-  - **URL:** `http://localhost:5005/translate`  
-  - **Method:** POST  
-  - **Description:** Receives a JSON payload with `text` and `target_language`. It validates the token, forwards the request to the Business Service for processing, saves the result in the Database Service, and returns the final translation.  
-  - **Example:**
-    ```bash
-    curl -X POST http://localhost:5005/translate \
-      -H "Authorization: Bearer mysecret-token" \
-      -H "Content-Type: application/json" \
-      -d '{"text": "Hello, how are you?", "target_language": "es"}'
-    ```
-
 ---
 
 ### Database Service Endpoints
@@ -190,3 +199,12 @@ When a request is made to the Client Service, the FastAPI endpoint retrieves the
     ```bash
     curl http://localhost:5007/read
     ```
+## Stopping the application
+To stop the application and remove the running containers, open a terminal in the project root and run:
+```bash
+   docker-compose down
+```
+This command stops and removes all containers defined in the docker-compose.yml, as well as the network created by Docker Compose. If you want to additionally remove the images, you can use:
+```bash
+   docker-compose down --rmi all
+```
