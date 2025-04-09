@@ -43,7 +43,7 @@ text_translation_pipeline/
 - **Business Service:** Accessible internally via http://localhost:5006 (for internal use only)
 - **Database Service:** Accessible internally via http://localhost:5007 (for internal use only)
 
-#### Token-Based Authentication
+##### Token-Based Authentication
 
 **Mechanism:**  
 The Client Service requires an `Authorization` header with the value:
@@ -55,7 +55,7 @@ where `mysecret-token` is defined in the `.env` file as `CLIENT_SERVICE_TOKEN`.
 **How It Works:**  
 When a request is made to the Client Service, the FastAPI endpoint retrieves the `Authorization` header and checks if it matches `Bearer {CLIENT_SERVICE_TOKEN}`. If not, it raises an HTTP 401 Unauthorized error.
 
-#### Request Flow
+##### Request Flow
 
 1. **Client → Client Service:**  
    The client sends a POST request to `/translate` (or calls a protected route) and includes the `Authorization` header.
@@ -72,28 +72,121 @@ When a request is made to the Client Service, the FastAPI endpoint retrieves the
 5. **Database Service → Client Service → Client:**  
    After storing the data, the Database Service returns a success message to the Client Service, which then returns the final translation result to the client.
 
-#### Example Usage
+## Testing Endpoints
 
-**Translation Request using curl**
+### Business Service Endpoints
 
-Submit a POST request to the Client Service's `/translate` endpoint:
+- **Root Endpoint**  
+  - **URL:** `http://localhost:5006/`  
+  - **Method:** GET  
+  - **Description:** Returns a short description of the Business Service.  
+  - **Example:**
+    ```bash
+    curl http://localhost:5006/
+    ```
 
-```bash
- curl -X POST http://localhost:5005/translate \
-  -H "Authorization: Bearer mysecret-token" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Я б хотів купити лосось", "target_language": "en"}'
-```
-In this curl , the JSON payload contains two key-value pairs:
-- “text”:
-This is the original piece of text that you want to translate. In the example, "Я б хотів купити лосось" is the input text that will be processed by the Business Service.
-- “target_language”:
-This specifies the language into which the text should be translated. In the example, "en" is provided as the target language, which stands for English.
+- **Health Check Endpoint**  
+  - **URL:** `http://localhost:5006/health`  
+  - **Method:** GET  
+  - **Description:** Returns `{"status": "ok"}` to indicate the service is running.  
+  - **Example:**
+    ```bash
+    curl http://localhost:5006/health
+    ```
 
-Thus, when you send this request, the system will take the text “Я б хотів купити лосось” and translate it into English.
+- **Processing Endpoint**  
+  - **URL:** `http://localhost:5006/process`  
+  - **Method:** POST  
+  - **Description:** Accepts a JSON payload with `text` and `target_language`, normalizes the text, detects its language, and returns the translated text.  
+  - **Example:**
+    ```bash
+    curl -X POST http://localhost:5006/process \
+      -H "Content-Type: application/json" \
+      -d '{"text": "Hello, how are you?", "target_language": "es"}'
+    ```
 
-**Expected Response:**
-```
-{"detected_language_of_request":"uk","target_language":"en","translated_text":"I would like to buy salmon"}
-```
-Protected Route Example
+---
+
+### Client Service Endpoints
+
+- **Root Endpoint**  
+  - **URL:** `http://localhost:5005/`  
+  - **Method:** GET  
+  - **Description:** Returns a short description of the Client Service.  
+  - **Example:**
+    ```bash
+    curl http://localhost:5005/
+    ```
+
+- **Health Check Endpoint**  
+  - **URL:** `http://localhost:5005/health`  
+  - **Method:** GET  
+  - **Description:** Returns `{"status": "ok"}` indicating that the service is operational.  
+  - **Example:**
+    ```bash
+    curl http://localhost:5005/health
+    ```
+
+- **Protected Route**  
+  - **URL:** `http://localhost:5005/some-protected-route`  
+  - **Method:** GET  
+  - **Description:** Validates the token passed in the `Authorization` header. Returns an authorization success message if the token is correct.  
+  - **Example:**
+    ```bash
+    curl -X GET http://localhost:5005/some-protected-route \
+      -H "Authorization: Bearer mysecret-token"
+    ```
+
+- **Translate Endpoint**  
+  - **URL:** `http://localhost:5005/translate`  
+  - **Method:** POST  
+  - **Description:** Receives a JSON payload with `text` and `target_language`. It validates the token, forwards the request to the Business Service for processing, saves the result in the Database Service, and returns the final translation.  
+  - **Example:**
+    ```bash
+    curl -X POST http://localhost:5005/translate \
+      -H "Authorization: Bearer mysecret-token" \
+      -H "Content-Type: application/json" \
+      -d '{"text": "Hello, how are you?", "target_language": "es"}'
+    ```
+
+---
+
+### Database Service Endpoints
+
+- **Root Endpoint**  
+  - **URL:** `http://localhost:5007/`  
+  - **Method:** GET  
+  - **Description:** Returns a short description of the Database Service.  
+  - **Example:**
+    ```bash
+    curl http://localhost:5007/
+    ```
+
+- **Health Check Endpoint**  
+  - **URL:** `http://localhost:5007/health`  
+  - **Method:** GET  
+  - **Description:** Returns `{"status": "ok"}` to confirm that the service is running.  
+  - **Example:**
+    ```bash
+    curl http://localhost:5007/health
+    ```
+
+- **Write Endpoint**  
+  - **URL:** `http://localhost:5007/write`  
+  - **Method:** POST  
+  - **Description:** Accepts a JSON record and saves it to the in-memory database.
+  - **Example:**
+    ```bash
+    curl -X POST http://localhost:5007/write \
+      -H "Content-Type: application/json" \
+      -d '{"original_text": "Hello, how are you?", "translated_text": "¿hola, cómo estás?", "target_language": "es", "detected_language": "en"}'
+    ```
+
+- **Read Endpoint**  
+  - **URL:** `http://localhost:5007/read`  
+  - **Method:** GET  
+  - **Description:** Returns all stored translation records as a JSON array.
+  - **Example:**
+    ```bash
+    curl http://localhost:5007/read
+    ```
