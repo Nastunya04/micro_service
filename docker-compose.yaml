@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  business_service:
+    build: 
+      context: ./business_service
+    container_name: business_service
+    ports:
+      - "5006:5002"
+
+  database_service:
+    build: 
+      context: ./database_service
+    container_name: database_service
+    ports:
+      - "5007:5003"
+
+  client_service:
+    build:
+      context: ./client_service
+    container_name: client_service
+    ports:
+      - "5005:5000"
+    environment:
+      - CLIENT_SERVICE_TOKEN=${CLIENT_SERVICE_TOKEN}
+    depends_on:
+      - business_service
+      - database_service
