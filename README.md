@@ -16,7 +16,7 @@ text_translation_pipeline/
 │   ├── database_service.py      # In-memory database with endpoints to write and read records
 │   ├── Dockerfile
 │   └── requirements.txt
-├── .env                         # Environment variables (CLIENT_SERVICE_TOKEN)
+├── .env                         # should be created!
 └── docker-compose.yml           # Links the services into a single network.
 ```
 #### Setup Instructions
